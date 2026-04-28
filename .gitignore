@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+
+# Data
+data/
+*.npz
+
+# IDE/Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Quarto
+.quarto/
+_site/
+
+# Misc
+.ipynb_checkpoints

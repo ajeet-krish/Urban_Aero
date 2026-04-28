@@ -1,0 +1,27 @@
+---
+title: "Urban Wind Canyons"
+subtitle: "A Differentiable CFD Analysis of Pedestrian Comfort"
+format: html
+toc: true
+---
+
+## Introduction
+Modern urban planning often inadvertently creates "wind canyons", areas where building geometry accelerates wind, leading to dangerous gusts at the pedestrian level. This project utilizes **Differentiable Physics** to simulate 3D wind flow and pollutant dispersion.
+
+## Theory
+The air flow is modeled using the 3D Incompressible Navier-Stokes equations:
+$$\rho \left( \frac{\partial \mathbf{u}}{\partial t} + \mathbf{u} \cdot \nabla \mathbf{u} \right) = -\nabla p + \mu \nabla^2 \mathbf{u} + \mathbf{f}$$ $$\nabla \cdot u = 0$$
+
+Pollutant (e.g., $CO_2$) transport is modeled with the advection-diffusion equation:
+$$\frac{\partial c}{\partial t} + \mathbf{u} \cdot \nabla c = D \nabla^2 c + S$$
+
+## Numerical Setup
+I started with a $64 \times 64 \times 16$ Cartesian grid. The simulation is accelerated using the PyTorch backend via [PhiFlow](https://github.com/tum-pbs/PhiFlow).
+
+## Simulation Results
+The following results demonstrate the wind speed acceleration around a procedural 3x3 building grid and the dispersion of a pollutant source located at the street level.
+
+*(visual results to be added)*
+
+## Pipeline
+The simulation generates `.npz` files that are compatible with scientific visualization tools and can be imported into Blender using Geometry Nodes for cinematic rendering.
