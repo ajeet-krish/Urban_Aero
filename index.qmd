@@ -3,6 +3,7 @@ title: "Urban Wind Canyons"
 subtitle: "A Differentiable CFD Analysis of Pedestrian Comfort"
 format:
   html:
+    theme: cosmo
     code-fold: true
     toc: true
 jupyter: python3
@@ -10,7 +11,7 @@ jupyter: python3
 
 ## Introduction
 
-Modern urban planning often inadvertently creates "wind canyons", areas where building geometry accelerates wind, leading to dangerous gusts at the pedestrian level. This project utilizes **Differentiable Physics** to simulate 3D wind flow and pollutant dispersion, providing a tool to optimize building layouts for pedestrian comfort.
+Modern urban planning often inadvertently creates "wind canyons"—areas where building geometry accelerates wind, leading to dangerous gusts at the pedestrian level. This project utilizes **Differentiable Physics** to simulate 3D wind flow and pollutant dispersion, providing a tool to optimize building layouts for pedestrian comfort.
 
 ## Theory
 
@@ -23,7 +24,7 @@ $$
 \nabla \cdot \mathbf{u} = 0
 $$
 
-Pollutant (e.g., $CO_2$) transport is modeled with the advection-diffusion equation:
+Pollutant transport is modeled with the advection-diffusion equation:
 
 $$
 \frac{\partial c}{\partial t} + \mathbf{u} \cdot \nabla c = D \nabla^2 c + S
@@ -35,7 +36,7 @@ We employ a Cartesian grid, accelerated on Apple Silicon using the PyTorch backe
 
 ```{python}
 #| label: setup
-#| echo: false
+#| echo: true
 from phi.torch.flow import *
 from src.simulation import setup_simulation, step_simulation
 from src.geometry import create_mask
@@ -46,25 +47,32 @@ res = (64, 64, 16)
 domain_size = (200, 200, 50)
 ```
 
-## Procedural Geometry
+## Comparative Aerodynamic Study
 
-We generate a 3x3 building grid programmatically, allowing for rapid iteration on urban layouts.
+We tested four urban archetypes. Each animation displays three panels: **Wind Speed (m/s)** with streamlines, **Vorticity (1/s)** (showing eddies), and **Smoke Concentration**.
+
+*Note: Wind enters from the **Left (West)**. Pollutant is introduced along the Western boundary, advecting across the city.*
 
 ```{python}
 #| label: geometry
-#| fig-cap: "Building obstacle mask (z-slice)"
+#| fig-cap: "Example: Grid Layout building footprints"
 obstacle_mask = create_mask(domain_size, res, layout_type="grid")
-# Visualization of the obstacle layout
 plt.imshow(obstacle_mask.values.numpy('x,y,z')[:, :, 2].T, origin='lower')
-plt.title("Building Footprints")
+plt.title("Building Footprints (z-slice)")
 plt.show()
 ```
 
-## Simulation Results
+### 1. Grid Layout (Baseline)
+![Grid Comparison](assets/grid_sim.gif)
 
-The simulation runs for 50 steps, capturing the wind flow around the buildings and the dispersion of a pollutant source located at the street level.
+### 2. Staggered Layout
+![Staggered Comparison](assets/staggered_sim.gif)
 
-![Urban Wind Canyon Simulation](assets/simulation.gif)
+### 3. Canyon Layout
+![Canyon Comparison](assets/canyon_sim.gif)
+
+### 4. Courtyard Layout
+![Courtyard Comparison](assets/courtyard_sim.gif)
 
 ## Conclusion & Pipeline
 

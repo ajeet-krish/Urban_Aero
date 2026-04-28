@@ -71,7 +71,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="index_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="index_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-8ffd5f67044e5306d9846f29df41dda5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -116,8 +116,13 @@ window.Quarto = {
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#theory" id="toc-theory" class="nav-link" data-scroll-target="#theory">Theory</a></li>
   <li><a href="#numerical-setup" id="toc-numerical-setup" class="nav-link" data-scroll-target="#numerical-setup">Numerical Setup</a></li>
-  <li><a href="#procedural-geometry" id="toc-procedural-geometry" class="nav-link" data-scroll-target="#procedural-geometry">Procedural Geometry</a></li>
-  <li><a href="#simulation-results" id="toc-simulation-results" class="nav-link" data-scroll-target="#simulation-results">Simulation Results</a></li>
+  <li><a href="#comparative-aerodynamic-study" id="toc-comparative-aerodynamic-study" class="nav-link" data-scroll-target="#comparative-aerodynamic-study">Comparative Aerodynamic Study</a>
+  <ul class="collapse">
+  <li><a href="#grid-layout-baseline" id="toc-grid-layout-baseline" class="nav-link" data-scroll-target="#grid-layout-baseline">1. Grid Layout (Baseline)</a></li>
+  <li><a href="#staggered-layout" id="toc-staggered-layout" class="nav-link" data-scroll-target="#staggered-layout">2. Staggered Layout</a></li>
+  <li><a href="#canyon-layout" id="toc-canyon-layout" class="nav-link" data-scroll-target="#canyon-layout">3. Canyon Layout</a></li>
+  <li><a href="#courtyard-layout" id="toc-courtyard-layout" class="nav-link" data-scroll-target="#courtyard-layout">4. Courtyard Layout</a></li>
+  </ul></li>
   <li><a href="#conclusion-pipeline" id="toc-conclusion-pipeline" class="nav-link" data-scroll-target="#conclusion-pipeline">Conclusion &amp; Pipeline</a></li>
   </ul>
 </nav>
@@ -146,7 +151,7 @@ window.Quarto = {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Modern urban planning often inadvertently creates “wind canyons”, areas where building geometry accelerates wind, leading to dangerous gusts at the pedestrian level. This project utilizes <strong>Differentiable Physics</strong> to simulate 3D wind flow and pollutant dispersion, providing a tool to optimize building layouts for pedestrian comfort.</p>
+<p>Modern urban planning often inadvertently creates “wind canyons”—areas where building geometry accelerates wind, leading to dangerous gusts at the pedestrian level. This project utilizes <strong>Differentiable Physics</strong> to simulate 3D wind flow and pollutant dispersion, providing a tool to optimize building layouts for pedestrian comfort.</p>
 </section>
 <section id="theory" class="level2">
 <h2 class="anchored" data-anchor-id="theory">Theory</h2>
@@ -156,7 +161,7 @@ window.Quarto = {
 \]</span> <span class="math display">\[
 \nabla \cdot \mathbf{u} = 0
 \]</span></p>
-<p>Pollutant (e.g., <span class="math inline">\(CO_2\)</span>) transport is modeled with the advection-diffusion equation:</p>
+<p>Pollutant transport is modeled with the advection-diffusion equation:</p>
 <p><span class="math display">\[
 \frac{\partial c}{\partial t} + \mathbf{u} \cdot \nabla c = D \nabla^2 c + S
 \]</span></p>
@@ -164,38 +169,77 @@ window.Quarto = {
 <section id="numerical-setup" class="level2">
 <h2 class="anchored" data-anchor-id="numerical-setup">Numerical Setup</h2>
 <p>We employ a Cartesian grid, accelerated on Apple Silicon using the PyTorch backend via <a href="https://github.com/tum-pbs/PhiFlow">PhiFlow</a>.</p>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> phi.torch.flow <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.simulation <span class="im">import</span> setup_simulation, step_simulation</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.geometry <span class="im">import</span> create_mask</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulation parameters</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> (<span class="dv">64</span>, <span class="dv">64</span>, <span class="dv">16</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>domain_size <span class="op">=</span> (<span class="dv">200</span>, <span class="dv">200</span>, <span class="dv">50</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
 </section>
-<section id="procedural-geometry" class="level2">
-<h2 class="anchored" data-anchor-id="procedural-geometry">Procedural Geometry</h2>
-<p>We generate a 3x3 building grid programmatically, allowing for rapid iteration on urban layouts.</p>
+<section id="comparative-aerodynamic-study" class="level2">
+<h2 class="anchored" data-anchor-id="comparative-aerodynamic-study">Comparative Aerodynamic Study</h2>
+<p>We tested four urban archetypes. Each animation displays three panels: <strong>Wind Speed (m/s)</strong> with streamlines, <strong>Vorticity (1/s)</strong> (showing eddies), and <strong>Smoke Concentration</strong>.</p>
+<p><em>Note: Wind enters from the <strong>Left (West)</strong>. Pollutant is introduced along the Western boundary, advecting across the city.</em></p>
 <div id="cell-geometry" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>obstacle_mask <span class="op">=</span> create_mask(domain_size, res, layout_type<span class="op">=</span><span class="st">"grid"</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualization of the obstacle layout</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.imshow(obstacle_mask.values.numpy(<span class="st">'x,y,z'</span>)[:, :, <span class="dv">2</span>].T, origin<span class="op">=</span><span class="st">'lower'</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Building Footprints"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>obstacle_mask <span class="op">=</span> create_mask(domain_size, res, layout_type<span class="op">=</span><span class="st">"grid"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>plt.imshow(obstacle_mask.values.numpy(<span class="st">'x,y,z'</span>)[:, :, <span class="dv">2</span>].T, origin<span class="op">=</span><span class="st">'lower'</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Building Footprints (z-slice)"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-display">
 <div id="geometry" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="index_files/figure-html/geometry-output-1.png" width="415" height="431" class="figure-img"></p>
-<figcaption>Building obstacle mask (z-slice)</figcaption>
+<figcaption>Example: Grid Layout building footprints</figcaption>
 </figure>
 </div>
 </div>
 </div>
-</section>
-<section id="simulation-results" class="level2">
-<h2 class="anchored" data-anchor-id="simulation-results">Simulation Results</h2>
-<p>The simulation runs for 50 steps, capturing the wind flow around the buildings and the dispersion of a pollutant source located at the street level.</p>
+<section id="grid-layout-baseline" class="level3">
+<h3 class="anchored" data-anchor-id="grid-layout-baseline">1. Grid Layout (Baseline)</h3>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="assets/simulation.gif" class="img-fluid figure-img"></p>
-<figcaption>Urban Wind Canyon Simulation</figcaption>
+<p><img src="assets/grid_sim.gif" class="img-fluid figure-img"></p>
+<figcaption>Grid Comparison</figcaption>
 </figure>
 </div>
+</section>
+<section id="staggered-layout" class="level3">
+<h3 class="anchored" data-anchor-id="staggered-layout">2. Staggered Layout</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/staggered_sim.gif" class="img-fluid figure-img"></p>
+<figcaption>Staggered Comparison</figcaption>
+</figure>
+</div>
+</section>
+<section id="canyon-layout" class="level3">
+<h3 class="anchored" data-anchor-id="canyon-layout">3. Canyon Layout</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/canyon_sim.gif" class="img-fluid figure-img"></p>
+<figcaption>Canyon Comparison</figcaption>
+</figure>
+</div>
+</section>
+<section id="courtyard-layout" class="level3">
+<h3 class="anchored" data-anchor-id="courtyard-layout">4. Courtyard Layout</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/courtyard_sim.gif" class="img-fluid figure-img"></p>
+<figcaption>Courtyard Comparison</figcaption>
+</figure>
+</div>
+</section>
 </section>
 <section id="conclusion-pipeline" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion-pipeline">Conclusion &amp; Pipeline</h2>
