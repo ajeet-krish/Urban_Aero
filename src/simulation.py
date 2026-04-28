@@ -1,5 +1,7 @@
 from phi.torch.flow import *
 import torch
+import phi.field
+from phi.field import StaggeredGrid, CenteredGrid, curl
 
 def setup_simulation(resolution=(64, 64, 16), domain_size=(200, 200, 50)):
     # Configure backend
@@ -30,11 +32,10 @@ def step_simulation(velocity, pressure, smoke, obstacle_mask, dt=1.0, diffusion_
     inflow = StaggeredGrid(1.0, extrapolation.BOUNDARY, bounds=velocity.bounds, resolution=velocity.resolution)
     velocity += inflow * 0.1
     
-    # Add smoke source (e.g., street level)
-    source_box = Box(x=(90, 110), y=(90, 110), z=(0, 2))
+    # Add smoke source along West boundary
+    source_box = Box(x=(0, 5), y=(0, 200), z=(0, 2))
     smoke_source = CenteredGrid(source_box, extrapolation.BOUNDARY, bounds=smoke.bounds, resolution=smoke.resolution)
     smoke += smoke_source * 0.1
-
 
     
     # Diffusion
@@ -44,6 +45,13 @@ def step_simulation(velocity, pressure, smoke, obstacle_mask, dt=1.0, diffusion_
     velocity, pressure = fluid.make_incompressible(velocity, ())
     
     # Apply obstacle no-slip condition
-    velocity = velocity * (1 - obstacle_mask)
+    staggered_mask = phi.field.StaggeredGrid(obstacle_mask, extrapolation.BOUNDARY, bounds=velocity.bounds, resolution=velocity.resolution)
+    velocity = velocity * (1 - staggered_mask)
     
-    return velocity, pressure, smoke
+    # Vorticity
+    # curl() might need to be imported or called differently
+    # Let's try calling it as a function if imported, or field.curl
+    vorticity = curl(velocity)
+    
+    return velocity, pressure, smoke, vorticity
+
