@@ -49,9 +49,9 @@ domain_size = (200, 200, 50)
 
 ## Comparative Aerodynamic Study
 
-We tested four urban archetypes. Each animation displays three panels: **Wind Speed (m/s)** with streamlines, **Vorticity (1/s)** (showing eddies), and **Smoke Concentration**.
+We tested four urban archetypes. Each animation displays an animated vector quiver plot showing the velocity field direction and magnitude (indicated by color, using the 'turbo' colormap) at the pedestrian level.
 
-*Note: Wind enters from the **Left (West)**. Pollutant is introduced along the Western boundary, advecting across the city.*
+*Note: Wind enters from the **Left (West)**.*
 
 ```{python}
 #| label: geometry
@@ -63,16 +63,16 @@ plt.show()
 ```
 
 ### 1. Grid Layout (Baseline)
-![Grid Comparison](assets/grid_sim.gif)
+{{< assets/grid_sim.mp4 >}}
 
 ### 2. Staggered Layout
-![Staggered Comparison](assets/staggered_sim.gif)
+{{< assets/staggered_sim.mp4 >}}
 
 ### 3. Canyon Layout
-![Canyon Comparison](assets/canyon_sim.gif)
+{{< assets/canyon_sim.mp4 >}}
 
 ### 4. Courtyard Layout
-![Courtyard Comparison](assets/courtyard_sim.gif)
+{{< assets/courtyard_sim.mp4 >}}
 
 ## Conclusion & Pipeline
 
